@@ -67,11 +67,21 @@ class SupervisorAgent(ChatModel):
 
     def _call_ka(self, query):
         try:
-            resp = self._w.serving_endpoints.query(
-                name=KA_ENDPOINT,
-                input={"messages": [{"role": "user", "content": query}]},
+            resp = self._w.api_client.do(
+                "POST",
+                "/serving-endpoints/" + KA_ENDPOINT + "/invocations",
+                body={"input": [{"role": "user", "content": query}]},
             )
-            return str(resp.result) if hasattr(resp, "result") else str(resp)
+            if "output" in resp:
+                texts = []
+                for item in resp["output"]:
+                    if item.get("type") == "message":
+                        for block in item.get("content", []):
+                            if block.get("type") == "output_text" and block.get("text"):
+                                texts.append(block["text"])
+                if texts:
+                    return "".join(texts)
+            return str(resp)
         except Exception as e:
             return "Knowledge Assistant error: " + str(e)
 

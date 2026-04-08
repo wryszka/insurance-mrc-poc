@@ -23,30 +23,36 @@ def get_client():
     return WorkspaceClient()
 
 
-def _query_endpoint(client: WorkspaceClient, endpoint_name: str, question: str) -> str:
-    """Query a chat-style serving endpoint using the raw API."""
-    payload = {"messages": [{"role": "user", "content": question}]}
+def query_supervisor(client: WorkspaceClient, question: str) -> str:
+    """Query the multi-agent supervisor endpoint (ChatCompletion format)."""
     resp = client.api_client.do(
         "POST",
-        f"/serving-endpoints/{endpoint_name}/invocations",
-        body=payload,
+        f"/serving-endpoints/{SERVING_ENDPOINT}/invocations",
+        body={"messages": [{"role": "user", "content": question}]},
     )
-    # resp is a dict with choices
     if "choices" in resp and resp["choices"]:
         return resp["choices"][0].get("message", {}).get("content", str(resp))
-    if "result" in resp:
-        return str(resp["result"])
     return str(resp)
 
 
-def query_supervisor(client: WorkspaceClient, question: str) -> str:
-    """Query the multi-agent supervisor endpoint."""
-    return _query_endpoint(client, SERVING_ENDPOINT, question)
-
-
 def query_knowledge_assistant(client: WorkspaceClient, question: str) -> str:
-    """Query the Knowledge Assistant directly."""
-    return _query_endpoint(client, KA_ENDPOINT, question)
+    """Query the Knowledge Assistant (uses 'input' field, returns 'output' array)."""
+    resp = client.api_client.do(
+        "POST",
+        f"/serving-endpoints/{KA_ENDPOINT}/invocations",
+        body={"input": [{"role": "user", "content": question}]},
+    )
+    # KA returns output array with message objects containing content blocks
+    if "output" in resp:
+        texts = []
+        for item in resp["output"]:
+            if item.get("type") == "message":
+                for block in item.get("content", []):
+                    if block.get("type") == "output_text" and block.get("text"):
+                        texts.append(block["text"])
+        if texts:
+            return "".join(texts)
+    return str(resp)
 
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
