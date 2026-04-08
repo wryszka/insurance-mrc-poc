@@ -138,13 +138,13 @@
 # MAGIC -- Audit trail: all actions on insurance_poc schema objects
 # MAGIC SELECT
 # MAGIC   event_time,
-# MAGIC   user_identity:email AS user_email,
+# MAGIC   user_identity.email AS user_email,
 # MAGIC   service_name,
 # MAGIC   action_name,
-# MAGIC   request_params:full_name_arg AS resource,
-# MAGIC   response:status_code AS status
+# MAGIC   request_params['full_name_arg'] AS resource,
+# MAGIC   response.status_code AS status
 # MAGIC FROM system.access.audit
-# MAGIC WHERE request_params:full_name_arg LIKE '%insurance_poc%'
+# MAGIC WHERE request_params['full_name_arg'] LIKE '%insurance_poc%'
 # MAGIC   AND event_date > current_date() - INTERVAL 7 DAYS
 # MAGIC ORDER BY event_time DESC
 # MAGIC LIMIT 30
@@ -155,9 +155,9 @@
 # MAGIC -- Who accessed the serving endpoints?
 # MAGIC SELECT
 # MAGIC   event_time,
-# MAGIC   user_identity:email AS user_email,
+# MAGIC   user_identity.email AS user_email,
 # MAGIC   action_name,
-# MAGIC   request_params:name AS endpoint_name,
+# MAGIC   request_params['name'] AS endpoint_name,
 # MAGIC   source_ip_address
 # MAGIC FROM system.access.audit
 # MAGIC WHERE service_name = 'serving'
@@ -237,10 +237,6 @@
 # MAGIC ## 6. Model Governance — Unity Catalog Model Registry
 # MAGIC
 # MAGIC All models are registered in Unity Catalog with full version history and lineage.
-
-# COMMAND ----------
-
-# MAGIC %pip install mlflow --quiet
 
 # COMMAND ----------
 
