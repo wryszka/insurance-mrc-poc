@@ -11,15 +11,12 @@ LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 KA_ENDPOINT = "ka-04bfe483-endpoint"
 
 SUPERVISOR_PROMPT = (
-    "You are an insurance policy supervisor agent for Lloyd's Market Reform Contracts.\n\n"
-    "You have two tools:\n"
-    "TOOL A - Knowledge Assistant: clause text, policy wording, semantic search, unstructured content\n"
-    "TOOL B - SQL Agent: limits, relationships, aggregations, structured graph data\n\n"
-    "Routing rules:\n"
-    "1. Text/semantics -> Tool A\n"
-    "2. Relationships/math/structured -> Tool B\n"
-    "3. Complex -> BOTH, synthesize answer\n\n"
-    'Return routing JSON: {"tools": ["A"|"B"|both], "query": "...", "query_a": "...", "query_b": "..."}'
+    "You are an insurance policy assistant for a Lloyd's syndicate, specialising in Market Reform Contracts.\n\n"
+    "You have access to a Knowledge Assistant that can search the raw MRC policy documents.\n"
+    "For every question, query the Knowledge Assistant first to get document-level context,\n"
+    "then provide a clear, well-structured answer based on what it returns.\n\n"
+    "Always cite specific policy numbers, clause references, and UMRs when available.\n"
+    "If the Knowledge Assistant returns no relevant information, say so clearly."
 )
 
 
@@ -27,42 +24,25 @@ class SupervisorAgent(ChatModel):
 
     def load_context(self, context):
         from databricks.sdk import WorkspaceClient
-        from databricks.sdk.service.sql import StatementState as SS
         self._w = WorkspaceClient()
-        self._ss = SS
-        whs = list(self._w.warehouses.list())
-        self._wh_id = next(
-            (x.id for x in whs if x.enable_serverless_compute),
-            whs[0].id if whs else None,
-        )
 
     def predict(self, context, messages: list[ChatMessage], params: ChatParams = None) -> ChatCompletionResponse:
         query = messages[-1].content if messages else ""
 
-        # Route
-        route_text = self._llm(SUPERVISOR_PROMPT + "\n\nUser: " + query + "\n\nReturn ONLY routing JSON.")
-        routing = self._parse_route(route_text, query)
+        # Always query KA for document context
+        ka_result = self._call_ka(query)
 
-        results = {}
-        if "A" in routing["tools"]:
-            qa = routing.get("query_a", routing.get("query", query))
-            results["Knowledge Assistant"] = self._call_ka(qa)
-        if "B" in routing["tools"]:
-            qb = routing.get("query_b", routing.get("query", query))
-            results["SQL Agent"] = self._call_sql_agent(qb)
-
-        # Synthesize
-        parts = ["Original question: " + query + "\n"]
-        for source, data in results.items():
-            parts.append(source + ":\n" + data + "\n")
-        parts.append("Provide a clear answer citing sources.")
-        final = self._llm("\n".join(parts))
+        # Synthesize with Claude
+        synth_prompt = (
+            SUPERVISOR_PROMPT + "\n\n"
+            "User question: " + query + "\n\n"
+            "Knowledge Assistant response:\n" + ka_result + "\n\n"
+            "Provide a clear, concise answer based on the above. Cite sources."
+        )
+        final = self._llm(synth_prompt)
 
         return ChatCompletionResponse(
-            choices=[ChatChoice(
-                index=0,
-                message=ChatMessage(role="assistant", content=final),
-            )]
+            choices=[ChatChoice(index=0, message=ChatMessage(role="assistant", content=final))]
         )
 
     def _call_ka(self, query):
@@ -85,81 +65,18 @@ class SupervisorAgent(ChatModel):
         except Exception as e:
             return "Knowledge Assistant error: " + str(e)
 
-    def _call_sql_agent(self, query):
-        gen_prompt = (
-            "Generate a Databricks SQL query for: " + query + "\n\n"
-            "Tables:\n"
-            "- " + FULL_SCHEMA + ".graph_nodes (node_id STRING, label STRING, properties STRING)\n"
-            "  labels: Policy, Insured, Broker, Insurer, Limit, Deductible, Clause, Exclusion, Premium\n"
-            "- " + FULL_SCHEMA + ".graph_edges (source_id STRING, target_id STRING, relationship_type STRING)\n"
-            "  relationships: PLACED_BY, ISSUED_TO, UNDERWRITTEN_BY, HAS_LIMIT, HAS_DEDUCTIBLE, CONTAINS_CLAUSE, EXCLUDES, HAS_PREMIUM\n\n"
-            "IMPORTANT: properties is a JSON string. Use the : operator to extract fields. Example: properties:name, properties:amount\n"
-            "String comparisons are CASE SENSITIVE. Use LIKE '%keyword%' for partial matches.\n\n"
-            "DATA EXAMPLES:\n"
-            "Policy node: node_id='policy_MRC2025LL004', properties='{\"policy_number\":\"MRC-2025-LL-004\",\"class_of_business\":\"Cyber Liability\"}'\n"
-            "Limit node: node_id='limit_cyber_liability', properties='{\"amount\":\"25000000\",\"currency\":\"USD\",\"basis\":\"Any one claim and in the aggregate\"}'\n"
-            "Broker node: node_id='broker_aon', properties='{\"name\":\"Aon UK Limited\",\"lloyds_broker_code\":\"0780\"}'\n"
-            "Edge: source_id='policy_MRC2025LL001', target_id='broker_aon', relationship_type='PLACED_BY'\n\n"
-            "EXAMPLE QUERIES:\n"
-            "Q: Which broker placed each policy?\n"
-            "SELECT p.properties:policy_number AS policy, b.properties:name AS broker\n"
-            "FROM " + FULL_SCHEMA + ".graph_edges e\n"
-            "JOIN " + FULL_SCHEMA + ".graph_nodes p ON e.source_id = p.node_id\n"
-            "JOIN " + FULL_SCHEMA + ".graph_nodes b ON e.target_id = b.node_id\n"
-            "WHERE e.relationship_type = 'PLACED_BY'\n\n"
-            "Q: Total limits for cyber policies?\n"
-            "SELECT p.properties:policy_number, l.properties:amount, l.properties:currency\n"
-            "FROM " + FULL_SCHEMA + ".graph_edges e\n"
-            "JOIN " + FULL_SCHEMA + ".graph_nodes p ON e.source_id = p.node_id\n"
-            "JOIN " + FULL_SCHEMA + ".graph_nodes l ON e.target_id = l.node_id\n"
-            "WHERE e.relationship_type = 'HAS_LIMIT' AND p.properties:class_of_business LIKE '%Cyber%'\n\n"
-            "Return ONLY the SQL query, no explanation."
-        )
-        sql_text = self._llm(gen_prompt)
-        sql_clean = self._strip_md(sql_text)
-        try:
-            rows = self._sql(sql_clean)
-            if not rows:
-                return "No results. SQL: " + sql_clean
-            return "\n".join(str(r) for r in rows[:25]) + "\nSQL: " + sql_clean
-        except Exception as e:
-            return "SQL error: " + str(e)
-
-    def _parse_route(self, text, fallback):
-        try:
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            if start >= 0 and end > start:
-                p = json.loads(text[start:end])
-                if "tools" in p:
-                    return p
-        except Exception:
-            pass
-        return {"tools": ["A", "B"], "query_a": fallback, "query_b": fallback}
-
     def _llm(self, prompt):
-        esc = prompt.replace("'", "''")
-        r = self._sql("SELECT ai_query('" + LLM_ENDPOINT + "', '" + esc + "') AS r")
-        return r[0][0] if r else ""
-
-    def _strip_md(self, s):
-        s = s.strip()
-        if s.startswith("```"):
-            lines = s.split("\n")
-            return "\n".join(l for l in lines if not l.strip().startswith("```"))
-        return s
-
-    def _sql(self, q):
-        import time as t
-        r = self._w.statement_execution.execute_statement(
-            warehouse_id=self._wh_id, statement=q.strip(), wait_timeout="50s"
-        )
-        while r.status and r.status.state in (self._ss.PENDING, self._ss.RUNNING):
-            t.sleep(1)
-            r = self._w.statement_execution.get_statement(r.statement_id)
-        if r.status and r.status.state == self._ss.FAILED:
-            raise RuntimeError("SQL failed: " + str(r.status.error.message))
-        return r.result.data_array if r.result and r.result.data_array else []
+        try:
+            resp = self._w.api_client.do(
+                "POST",
+                "/serving-endpoints/" + LLM_ENDPOINT + "/invocations",
+                body={"messages": [{"role": "user", "content": prompt}]},
+            )
+            if "choices" in resp and resp["choices"]:
+                return resp["choices"][0].get("message", {}).get("content", "")
+            return str(resp)
+        except Exception as e:
+            return "LLM error: " + str(e)
 
 
 mlflow.models.set_model(SupervisorAgent())

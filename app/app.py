@@ -10,6 +10,7 @@ SERVING_ENDPOINT = os.environ.get(
     "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
 )
 KA_ENDPOINT = os.environ.get("KA_ENDPOINT", "ka-04bfe483-endpoint")
+GENIE_SPACE_ID = os.environ.get("GENIE_SPACE_ID", "01f133331bcd1672834e9736f93f6244")
 
 st.set_page_config(
     page_title="Insurance MRC Assistant",
@@ -33,6 +34,20 @@ def query_supervisor(client: WorkspaceClient, question: str) -> str:
     if "choices" in resp and resp["choices"]:
         return resp["choices"][0].get("message", {}).get("content", str(resp))
     return str(resp)
+
+
+def query_genie(client: WorkspaceClient, question: str) -> str:
+    """Query the Genie room for structured data answers."""
+    msg = client.genie.start_conversation_and_wait(
+        space_id=GENIE_SPACE_ID, content=question,
+    )
+    parts = []
+    for att in (msg.attachments or []):
+        if att.query and att.query.query:
+            parts.append("**SQL executed:**\n```sql\n" + att.query.query + "\n```\n")
+        if att.text and att.text.content:
+            parts.append(att.text.content)
+    return "\n\n".join(parts) if parts else "Genie returned no results."
 
 
 def query_knowledge_assistant(client: WorkspaceClient, question: str) -> str:
@@ -64,7 +79,7 @@ with st.sidebar:
 
     mode = st.radio(
         "Query Mode",
-        ["Supervisor (Auto-Route)", "Knowledge Assistant (Documents)", "SQL Agent (Graph Data)"],
+        ["Supervisor (Auto-Route)", "Knowledge Assistant (Documents)", "Genie (Graph Data)"],
         index=0,
     )
 
@@ -83,7 +98,7 @@ with st.sidebar:
             "Describe the cyber liability coverage sections",
             "What are the terms for the D&O Side A coverage?",
         ],
-        "SQL Agent (Graph Data)": [
+        "Genie (Graph Data)": [
             "List all policies with their brokers",
             "What is the total premium across all policies?",
             "Which syndicates underwrite more than one policy?",
@@ -130,7 +145,7 @@ with tab_about:
     st.markdown(
         "The system uses a **multi-agent architecture**:\n\n"
         "- **Knowledge Assistant** — vector search over raw MRC PDF documents\n"
-        "- **SQL Agent** — natural language to SQL over the knowledge graph (Delta tables)\n"
+        "- **Genie Room** — natural language to SQL over the knowledge graph (Delta tables)\n"
         "- **Supervisor Agent** (Claude Sonnet 4.6) — routes queries to the right tool and synthesises answers\n\n"
         "| Databricks Service | Role |\n"
         "|---|---|\n"
@@ -138,7 +153,7 @@ with tab_about:
         "| `ai_parse_document()` | Native PDF text extraction |\n"
         "| `ai_query()` + Llama 3.3 70B | Graph entity/relationship extraction |\n"
         "| Knowledge Assistants | Vector search over raw documents |\n"
-        "| Mosaic AI Agent Framework | SQL agent + supervisor deployment |\n"
+        "| Mosaic AI Agent Framework | Supervisor agent deployment |\n"
         "| Foundation Model API | Claude Sonnet 4.6 for agent routing |\n"
         "| Databricks Apps | This UI |\n"
     )
@@ -150,7 +165,7 @@ with tab_chat:
     st.markdown(
         "Ask questions about Lloyd's Market Reform Contracts. "
         "The system uses a **multi-agent architecture** with a Knowledge Assistant "
-        "for document search and a SQL Agent for structured graph queries."
+        "for document search and a Genie room for structured graph queries."
     )
 
     # Chat history
@@ -182,11 +197,8 @@ with tab_chat:
 
                     if "Knowledge Assistant" in mode:
                         response = query_knowledge_assistant(client, prompt)
-                    elif "SQL Agent" in mode:
-                        response = query_supervisor(
-                            client,
-                            "Using the SQL agent only, answer: " + prompt,
-                        )
+                    elif "Genie" in mode:
+                        response = query_genie(client, prompt)
                     else:
                         response = query_supervisor(client, prompt)
 

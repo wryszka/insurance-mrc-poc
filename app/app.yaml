@@ -12,6 +12,8 @@ env:
     value: "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup"
   - name: KA_ENDPOINT
     value: "ka-04bfe483-endpoint"
+  - name: GENIE_SPACE_ID
+    value: "01f133331bcd1672834e9736f93f6244"
 
 resources:
   - name: serving-endpoint
