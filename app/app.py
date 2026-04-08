@@ -114,11 +114,12 @@ with st.sidebar:
     st.caption("Powered by Databricks Mosaic AI Agent Framework")
     st.caption("Foundation Model: Claude Sonnet 4.6")
 
-# ── Landing / About Tab ─────────────────────────────────────────────────────
+# ── Page routing via session state ──────────────────────────────────────────
 
-tab_chat, tab_about = st.tabs(["Chat", "About"])
+if "page" not in st.session_state:
+    st.session_state.page = "about"
 
-with tab_about:
+if st.session_state.page == "about":
     st.header("About this demo")
     st.markdown(
         "This application is not a Databricks product — it is a working "
@@ -158,9 +159,12 @@ with tab_about:
         "| Databricks Apps | This UI |\n"
     )
 
-# ── Main Chat Content ──────────────────────────────────────────────────────
+    st.divider()
+    if st.button("OK — Open Chat", type="primary", use_container_width=True):
+        st.session_state.page = "chat"
+        st.rerun()
 
-with tab_chat:
+else:  # page == "chat"
     st.header("Insurance MRC Policy Assistant")
     st.markdown(
         "Ask questions about Lloyd's Market Reform Contracts. "
