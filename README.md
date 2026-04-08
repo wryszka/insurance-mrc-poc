@@ -38,7 +38,7 @@ python deploy_all.py
 ```json
 {
   "catalog": "my_catalog",          // REQUIRED: your Unity Catalog catalog name
-  "schema": "insurance_poc",        // schema name (created automatically)
+  "schema": "insurance_mrc_assistant",        // schema name (created automatically)
   "databricks_profile": "DEFAULT",  // your databricks CLI profile name
   "llm_extraction": "databricks-meta-llama-3-3-70b-instruct",  // extraction LLM
   "llm_agent": "databricks-claude-sonnet-4-6",                  // agent LLM
@@ -55,11 +55,11 @@ databricks catalogs list --profile YOUR_PROFILE
 
 ### What gets deployed
 
-Everything is created inside `<your_catalog>.insurance_poc`:
+Everything is created inside `<your_catalog>.insurance_mrc_assistant`:
 
 | Resource | Name | Type |
 |----------|------|------|
-| Schema | `insurance_poc` | Unity Catalog schema |
+| Schema | `insurance_mrc_assistant` | Unity Catalog schema |
 | Volume | `raw_policies` | Managed volume (5 MRC PDFs) |
 | Table | `graph_nodes` | Delta table (entities) |
 | Table | `graph_edges` | Delta table (relationships) |
@@ -142,7 +142,7 @@ To remove everything:
 
 ```sql
 -- Drop the schema and all contents
-DROP SCHEMA <catalog>.insurance_poc CASCADE;
+DROP SCHEMA <catalog>.insurance_mrc_assistant CASCADE;
 ```
 
 Then manually delete:

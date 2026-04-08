@@ -11,7 +11,7 @@ import mlflow
 from mlflow.pyfunc import PythonModel
 
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_poc"
+SCHEMA = "insurance_mrc_assistant"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 
 # Loaded from ka_config.json at deploy time

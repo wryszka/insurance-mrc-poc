@@ -9,14 +9,14 @@ command:
 
 env:
   - name: SERVING_ENDPOINT
-    value: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
+    value: "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup"
   - name: KA_ENDPOINT
     value: "ka-04bfe483-endpoint"
 
 resources:
   - name: serving-endpoint
     serving_endpoint:
-      name: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
+      name: "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup"
       permission: CAN_QUERY
   - name: ka-endpoint
     serving_endpoint:

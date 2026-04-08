@@ -51,7 +51,7 @@
 
 # MAGIC %sql
 # MAGIC -- What's in our document store?
-# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/'
+# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/'
 
 # COMMAND ----------
 
@@ -93,7 +93,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC -- Parse the first MRC and see what we get
 # MAGIC SELECT
 # MAGIC   cast(ai_parse_document(content) AS STRING) AS parsed_json
-# MAGIC FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_001.pdf')
+# MAGIC FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_001.pdf')
 
 # COMMAND ----------
 
@@ -101,7 +101,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC -- Extract just the text elements for readability
 # MAGIC WITH parsed AS (
 # MAGIC   SELECT cast(ai_parse_document(content) AS STRING) AS doc_json
-# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_001.pdf')
+# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_001.pdf')
 # MAGIC )
 # MAGIC SELECT
 # MAGIC   element.type,
@@ -142,7 +142,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC %sql
 # MAGIC -- Node summary
 # MAGIC SELECT label, COUNT(*) as count
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
 # MAGIC GROUP BY label
 # MAGIC ORDER BY count DESC
 
@@ -156,7 +156,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   properties:class_of_business AS class_of_business,
 # MAGIC   properties:inception_date AS inception,
 # MAGIC   properties:expiry_date AS expiry
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
 # MAGIC WHERE label = 'Policy'
 
 # COMMAND ----------
@@ -164,7 +164,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC %sql
 # MAGIC -- Relationship summary
 # MAGIC SELECT relationship_type, COUNT(*) as count
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges
 # MAGIC GROUP BY relationship_type
 # MAGIC ORDER BY count DESC
 
@@ -176,9 +176,9 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   p.properties:policy_number AS policy,
 # MAGIC   b.properties:name AS broker,
 # MAGIC   b.properties:lloyds_broker_code AS broker_code
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p ON e.source_id = p.node_id
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes b ON e.target_id = b.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p ON e.source_id = p.node_id
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes b ON e.target_id = b.node_id
 # MAGIC WHERE e.relationship_type = 'PLACED_BY'
 
 # COMMAND ----------
@@ -191,9 +191,9 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   l.properties:type AS limit_type,
 # MAGIC   l.properties:amount AS amount,
 # MAGIC   l.properties:basis AS basis
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p ON e.source_id = p.node_id
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes l ON e.target_id = l.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p ON e.source_id = p.node_id
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes l ON e.target_id = l.node_id
 # MAGIC WHERE e.relationship_type = 'HAS_LIMIT'
 # MAGIC ORDER BY p.properties:policy_number
 
@@ -232,7 +232,7 @@ print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
 
 # Query the supervisor
 resp = w.serving_endpoints.query(
-    name="agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup",
+    name="agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
     input={"messages": [{"role": "user", "content": "Which policy has the highest aggregate limit, and what exclusions apply to it?"}]},
 )
 print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
@@ -241,7 +241,7 @@ print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
 
 # Another query — pure graph traversal
 resp = w.serving_endpoints.query(
-    name="agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup",
+    name="agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
     input={"messages": [{"role": "user", "content": "List all syndicates that underwrite more than one policy"}]},
 )
 print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)

@@ -20,7 +20,7 @@ from databricks.sdk import WorkspaceClient
 mlflow.set_registry_uri("databricks-uc")
 
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_poc"
+SCHEMA = "insurance_mrc_assistant"
 FULL_SCHEMA = CATALOG + "." + SCHEMA
 WS_DIR = "/Workspace/Users/laurence.ryszka@databricks.com/insurance_mrc_poc"
 

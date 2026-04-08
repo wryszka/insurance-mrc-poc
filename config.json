@@ -2,7 +2,7 @@
   "_comment": "Edit ONLY this file before deploying. All scripts read from here.",
 
   "catalog": "YOUR_CATALOG",
-  "schema": "insurance_poc",
+  "schema": "insurance_mrc_assistant",
 
   "databricks_profile": "DEFAULT",
 

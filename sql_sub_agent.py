@@ -11,7 +11,7 @@ import mlflow
 from mlflow.pyfunc import PythonModel
 
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_poc"
+SCHEMA = "insurance_mrc_assistant"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 
 SQL_AGENT_SYSTEM_PROMPT = """You are a graph data extractor. Write and execute SQL queries on the nodes and edges tables to find entity relationships and limits. Return facts.

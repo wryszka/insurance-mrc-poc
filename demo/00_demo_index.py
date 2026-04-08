@@ -25,12 +25,12 @@
 # MAGIC | Asset | Link |
 # MAGIC |-------|------|
 # MAGIC | **Chat App** | [insurance-mrc-assistant](https://insurance-mrc-assistant-7474659673789953.aws.databricksapps.com) |
-# MAGIC | **UC Schema** | `lr_serverless_aws_us_catalog.insurance_poc` |
-# MAGIC | **Graph Nodes** | `lr_serverless_aws_us_catalog.insurance_poc.graph_nodes` (105 nodes) |
-# MAGIC | **Graph Edges** | `lr_serverless_aws_us_catalog.insurance_poc.graph_edges` (100 edges) |
-# MAGIC | **PDF Volume** | `/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/` (5 MRCs) |
+# MAGIC | **UC Schema** | `lr_serverless_aws_us_catalog.insurance_mrc_assistant` |
+# MAGIC | **Graph Nodes** | `lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes` (105 nodes) |
+# MAGIC | **Graph Edges** | `lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges` (100 edges) |
+# MAGIC | **PDF Volume** | `/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/` (5 MRCs) |
 # MAGIC | **Knowledge Assistant** | `ka-04bfe483-endpoint` |
-# MAGIC | **Supervisor Agent** | `agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup` |
+# MAGIC | **Supervisor Agent** | `agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup` |
 # MAGIC | **GitHub Repo** | [wryszka/insurance-mrc-poc](https://github.com/wryszka/insurance-mrc-poc) |
 # MAGIC
 # MAGIC ---

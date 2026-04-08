@@ -476,12 +476,12 @@ def step7_upload_demos(cfg, w):
             with open(os.path.join(local_demo, fname)) as f:
                 content = f.read()
             # Replace hardcoded references with this deployment's values
-            content = content.replace("lr_serverless_aws_us_catalog.insurance_poc", cfg["full_schema"])
+            content = content.replace("lr_serverless_aws_us_catalog.insurance_mrc_assistant", cfg["full_schema"])
             content = content.replace("lr_serverless_aws_us_catalog", cfg["catalog"])
-            content = content.replace("insurance_poc", cfg["schema"])
+            content = content.replace("insurance_mrc_assistant", cfg["schema"])
             content = content.replace("ka-04bfe483-endpoint", state.get("ka_endpoint", ""))
             content = content.replace(
-                "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup",
+                "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
                 state.get("supervisor_endpoint", "")
             )
             content = content.replace(
@@ -515,7 +515,7 @@ def _render_sql_agent_model(full_schema, llm_endpoint):
         code = f.read()
     code = code.replace('CATALOG + "." + SCHEMA', f'"{full_schema}"')
     code = code.replace('CATALOG = "lr_serverless_aws_us_catalog"', f'CATALOG = "{full_schema.split(".")[0]}"')
-    code = code.replace('SCHEMA = "insurance_poc"', f'SCHEMA = "{full_schema.split(".")[1]}"')
+    code = code.replace('SCHEMA = "insurance_mrc_assistant"', f'SCHEMA = "{full_schema.split(".")[1]}"')
     code = code.replace("databricks-claude-sonnet-4-6", llm_endpoint)
     return code
 
@@ -524,7 +524,7 @@ def _render_supervisor_model(full_schema, llm_endpoint, ka_endpoint):
     with open(os.path.join(ROOT, "supervisor_model.py")) as f:
         code = f.read()
     code = code.replace('CATALOG = "lr_serverless_aws_us_catalog"', f'CATALOG = "{full_schema.split(".")[0]}"')
-    code = code.replace('SCHEMA = "insurance_poc"', f'SCHEMA = "{full_schema.split(".")[1]}"')
+    code = code.replace('SCHEMA = "insurance_mrc_assistant"', f'SCHEMA = "{full_schema.split(".")[1]}"')
     code = code.replace("databricks-claude-sonnet-4-6", llm_endpoint)
     code = code.replace("ka-04bfe483-endpoint", ka_endpoint)
     return code
@@ -534,14 +534,14 @@ def _render_deploy_notebook(full_schema):
     with open(os.path.join(ROOT, "deploy_agents.py")) as f:
         code = f.read()
     code = code.replace('CATALOG = "lr_serverless_aws_us_catalog"', f'CATALOG = "{full_schema.split(".")[0]}"')
-    code = code.replace('SCHEMA = "insurance_poc"', f'SCHEMA = "{full_schema.split(".")[1]}"')
+    code = code.replace('SCHEMA = "insurance_mrc_assistant"', f'SCHEMA = "{full_schema.split(".")[1]}"')
     return code
 
 
 def _render_app_py(supervisor_ep, ka_ep):
     with open(os.path.join(ROOT, "app", "app.py")) as f:
         code = f.read()
-    code = code.replace("agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup", supervisor_ep)
+    code = code.replace("agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup", supervisor_ep)
     code = code.replace("ka-04bfe483-endpoint", ka_ep)
     return code
 
