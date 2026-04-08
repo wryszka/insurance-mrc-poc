@@ -23,28 +23,30 @@ def get_client():
     return WorkspaceClient()
 
 
+def _query_endpoint(client: WorkspaceClient, endpoint_name: str, question: str) -> str:
+    """Query a chat-style serving endpoint using the raw API."""
+    payload = {"messages": [{"role": "user", "content": question}]}
+    resp = client.api_client.do(
+        "POST",
+        f"/serving-endpoints/{endpoint_name}/invocations",
+        body=payload,
+    )
+    # resp is a dict with choices
+    if "choices" in resp and resp["choices"]:
+        return resp["choices"][0].get("message", {}).get("content", str(resp))
+    if "result" in resp:
+        return str(resp["result"])
+    return str(resp)
+
+
 def query_supervisor(client: WorkspaceClient, question: str) -> str:
     """Query the multi-agent supervisor endpoint."""
-    resp = client.serving_endpoints.query(
-        name=SERVING_ENDPOINT,
-        input={"messages": [{"role": "user", "content": question}]},
-    )
-    if hasattr(resp, "choices") and resp.choices:
-        return resp.choices[0].message.content
-    return str(resp)
+    return _query_endpoint(client, SERVING_ENDPOINT, question)
 
 
 def query_knowledge_assistant(client: WorkspaceClient, question: str) -> str:
     """Query the Knowledge Assistant directly."""
-    resp = client.serving_endpoints.query(
-        name=KA_ENDPOINT,
-        input={"messages": [{"role": "user", "content": question}]},
-    )
-    if hasattr(resp, "choices") and resp.choices:
-        return resp.choices[0].message.content
-    if hasattr(resp, "result"):
-        return str(resp.result)
-    return str(resp)
+    return _query_endpoint(client, KA_ENDPOINT, question)
 
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
