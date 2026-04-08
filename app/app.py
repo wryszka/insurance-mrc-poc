@@ -99,70 +99,114 @@ with st.sidebar:
     st.caption("Powered by Databricks Mosaic AI Agent Framework")
     st.caption("Foundation Model: Claude Sonnet 4.6")
 
-# ── Main Content ────────────────────────────────────────────────────────────
+# ── Landing / About Tab ─────────────────────────────────────────────────────
 
-st.header("Insurance MRC Policy Assistant")
-st.markdown(
-    "Ask questions about Lloyd's Market Reform Contracts. "
-    "The system uses a **multi-agent architecture** with a Knowledge Assistant "
-    "for document search and a SQL Agent for structured graph queries."
-)
+tab_chat, tab_about = st.tabs(["Chat", "About"])
 
-# Chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+with tab_about:
+    st.header("About this demo")
+    st.markdown(
+        "This application is not a Databricks product — it is a working "
+        "demonstration of what can be built on the Databricks platform. "
+        "All processes shown here are real and running: the data pipelines, "
+        "quality checks, AI agents, model governance, and approval workflows "
+        "all execute on Databricks infrastructure using Declarative Pipelines, "
+        "Unity Catalog, Foundation Model API, and Databricks Apps."
+    )
+    st.markdown(
+        "**The data is synthetic.** The regulatory templates, actuarial logic, "
+        "and AI agent prompts are illustrative and should not be relied upon "
+        "for actual regulatory submissions."
+    )
+    st.markdown(
+        "The source code is available on "
+        "[GitHub](https://github.com/wryszka/insurance-mrc-poc) and can be "
+        "deployed to any Databricks workspace. It is provided as-is for "
+        "demonstration and learning purposes — not for production use."
+    )
 
-# Display chat history
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
+    st.divider()
+    st.subheader("Architecture")
+    st.markdown(
+        "The system uses a **multi-agent architecture**:\n\n"
+        "- **Knowledge Assistant** — vector search over raw MRC PDF documents\n"
+        "- **SQL Agent** — natural language to SQL over the knowledge graph (Delta tables)\n"
+        "- **Supervisor Agent** (Claude Sonnet 4.6) — routes queries to the right tool and synthesises answers\n\n"
+        "| Databricks Service | Role |\n"
+        "|---|---|\n"
+        "| Unity Catalog | Schema, volume, table, model governance |\n"
+        "| `ai_parse_document()` | Native PDF text extraction |\n"
+        "| `ai_query()` + Llama 3.3 70B | Graph entity/relationship extraction |\n"
+        "| Knowledge Assistants | Vector search over raw documents |\n"
+        "| Mosaic AI Agent Framework | SQL agent + supervisor deployment |\n"
+        "| Foundation Model API | Claude Sonnet 4.6 for agent routing |\n"
+        "| Databricks Apps | This UI |\n"
+    )
 
-# Handle prefilled question from sidebar
-prefill = st.session_state.pop("prefill", None)
+# ── Main Chat Content ──────────────────────────────────────────────────────
 
-# Chat input
-prompt = st.chat_input("Ask about your insurance policies...") or prefill
+with tab_chat:
+    st.header("Insurance MRC Policy Assistant")
+    st.markdown(
+        "Ask questions about Lloyd's Market Reform Contracts. "
+        "The system uses a **multi-agent architecture** with a Knowledge Assistant "
+        "for document search and a SQL Agent for structured graph queries."
+    )
 
-if prompt:
-    # Show user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # Chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    # Get response
-    with st.chat_message("assistant"):
-        with st.spinner("Analysing..."):
-            try:
-                client = get_client()
+    # Display chat history
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-                if "Knowledge Assistant" in mode:
-                    response = query_knowledge_assistant(client, prompt)
-                elif "SQL Agent" in mode:
-                    # For SQL agent, query supervisor with explicit SQL routing hint
-                    response = query_supervisor(
-                        client,
-                        "Using the SQL agent only, answer: " + prompt,
+    # Handle prefilled question from sidebar
+    prefill = st.session_state.pop("prefill", None)
+
+    # Chat input
+    prompt = st.chat_input("Ask about your insurance policies...") or prefill
+
+    if prompt:
+        # Show user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # Get response
+        with st.chat_message("assistant"):
+            with st.spinner("Analysing..."):
+                try:
+                    client = get_client()
+
+                    if "Knowledge Assistant" in mode:
+                        response = query_knowledge_assistant(client, prompt)
+                    elif "SQL Agent" in mode:
+                        response = query_supervisor(
+                            client,
+                            "Using the SQL agent only, answer: " + prompt,
+                        )
+                    else:
+                        response = query_supervisor(client, prompt)
+
+                    st.markdown(response)
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": response}
                     )
-                else:
-                    response = query_supervisor(client, prompt)
+                except Exception as e:
+                    error_msg = f"Error: {str(e)}"
+                    st.error(error_msg)
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": error_msg}
+                    )
 
-                st.markdown(response)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response}
-                )
-            except Exception as e:
-                error_msg = f"Error: {str(e)}"
-                st.error(error_msg)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": error_msg}
-                )
-
-# Footer
-st.divider()
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Policies Indexed", "5")
-with col2:
-    st.metric("Graph Nodes", "105")
-with col3:
-    st.metric("Graph Edges", "100")
+    # Footer
+    st.divider()
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Policies Indexed", "5")
+    with col2:
+        st.metric("Graph Nodes", "105")
+    with col3:
+        st.metric("Graph Edges", "100")

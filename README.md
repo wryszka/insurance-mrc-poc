@@ -4,6 +4,12 @@ End-to-end AI system that extracts structured knowledge from Lloyd's Market Refo
 
 **Everything runs on Databricks. No external services.**
 
+> **Disclaimer**: This application is not a Databricks product — it is a working demonstration of what can be built on the Databricks platform. All processes shown here are real and running: the data pipelines, quality checks, AI agents, model governance, and approval workflows all execute on Databricks infrastructure using Declarative Pipelines, Unity Catalog, Foundation Model API, and Databricks Apps.
+>
+> The data is synthetic. The regulatory templates, actuarial logic, and AI agent prompts are illustrative and should not be relied upon for actual regulatory submissions.
+>
+> The source code is provided as-is for demonstration and learning purposes — not for production use.
+
 ## Quick Start
 
 ### Prerequisites

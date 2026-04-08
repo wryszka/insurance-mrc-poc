@@ -8,6 +8,12 @@
 # MAGIC
 # MAGIC **All built on Databricks. No external services.**
 # MAGIC
+# MAGIC > **Disclaimer**: This application is not a Databricks product — it is a working demonstration of what can be built on the Databricks platform. All processes shown here are real and running: the data pipelines, quality checks, AI agents, model governance, and approval workflows all execute on Databricks infrastructure using Declarative Pipelines, Unity Catalog, Foundation Model API, and Databricks Apps.
+# MAGIC >
+# MAGIC > The data is synthetic. The regulatory templates, actuarial logic, and AI agent prompts are illustrative and should not be relied upon for actual regulatory submissions.
+# MAGIC >
+# MAGIC > The source code is available on [GitHub](https://github.com/wryszka/insurance-mrc-poc) and can be deployed to any Databricks workspace. It is provided as-is for demonstration and learning purposes — not for production use.
+# MAGIC
 # MAGIC ---
 # MAGIC
 # MAGIC ## Demo Notebooks

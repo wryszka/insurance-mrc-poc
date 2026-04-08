@@ -6,6 +6,8 @@
 # MAGIC
 # MAGIC This notebook walks through every stage of the pipeline — from raw PDF to multi-agent assistant.
 # MAGIC
+# MAGIC > **Disclaimer**: This is not a Databricks product. The data is synthetic. Regulatory templates, actuarial logic, and AI prompts are illustrative — not for production use or actual regulatory submissions. [Source code on GitHub](https://github.com/wryszka/insurance-mrc-poc).
+# MAGIC
 # MAGIC ---
 # MAGIC
 # MAGIC ### Architecture
