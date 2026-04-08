@@ -237,17 +237,15 @@
 # MAGIC ## 6. Model Governance — Unity Catalog Model Registry
 # MAGIC
 # MAGIC All models are registered in Unity Catalog with full version history and lineage.
-
-# COMMAND ----------
-
-from mlflow import MlflowClient
-
-client = MlflowClient()
-model_name = "lr_serverless_aws_us_catalog.insurance_poc.insurance_supervisor_agent"
-
-print(f"Model: {model_name}\n")
-for v in client.search_model_versions(f"name = '{model_name}'"):
-    print(f"  v{v.version}: status={v.status}, source={v.source[:80]}")
+# MAGIC
+# MAGIC The supervisor agent model is registered at: `lr_serverless_aws_us_catalog.insurance_poc.insurance_supervisor_agent`
+# MAGIC
+# MAGIC To inspect versions, approvals, and lineage:
+# MAGIC 1. Navigate to **Catalog** in the sidebar
+# MAGIC 2. Browse to `lr_serverless_aws_us_catalog` → `insurance_poc` → **Models** → `insurance_supervisor_agent`
+# MAGIC 3. Each version shows: creation time, source run, serving endpoints, and lineage graph
+# MAGIC
+# MAGIC In production, you would use **model aliases** (e.g. `@champion`, `@challenger`) and **approval workflows** to control which version serves traffic.
 
 # COMMAND ----------
 
