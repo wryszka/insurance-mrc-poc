@@ -5,7 +5,7 @@ from mlflow.pyfunc import ChatModel
 from mlflow.types.llm import ChatCompletionResponse, ChatMessage, ChatChoice, ChatParams
 
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_mrc_assistant"
+SCHEMA = "insurance_poc"
 FULL_SCHEMA = CATALOG + "." + SCHEMA
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 
