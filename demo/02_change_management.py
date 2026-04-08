@@ -94,7 +94,7 @@ print("Dictionary updated. New entities will be extracted on next pipeline run."
 # MAGIC -- Parse the cyber policy (likely to have subjectivities and territory clauses)
 # MAGIC WITH parsed AS (
 # MAGIC   SELECT cast(ai_parse_document(content) AS STRING) AS doc_json
-# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_004.pdf')
+# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_004.pdf')
 # MAGIC ),
 # MAGIC doc_text AS (
 # MAGIC   SELECT concat_ws('\n',
@@ -144,15 +144,15 @@ print("Dictionary updated. New entities will be extracted on next pipeline run."
 
 # MAGIC %sql
 # MAGIC -- Current files in the volume
-# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/'
+# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/'
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- Current graph size
-# MAGIC SELECT 'Nodes' AS metric, COUNT(*) AS count FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
+# MAGIC SELECT 'Nodes' AS metric, COUNT(*) AS count FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
 # MAGIC UNION ALL
-# MAGIC SELECT 'Edges', COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges
+# MAGIC SELECT 'Edges', COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges
 
 # COMMAND ----------
 
@@ -168,7 +168,7 @@ w = WorkspaceClient()
 
 # Check: if we had a 6th policy, we'd upload it like this:
 # with open("mrc_policy_006.pdf", "rb") as f:
-#     w.files.upload("/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_006.pdf", f, overwrite=True)
+#     w.files.upload("/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_006.pdf", f, overwrite=True)
 
 # For demo, let's show what incremental extraction looks like.
 # We'll re-extract just ONE file and INSERT (not replace) into the graph.
@@ -190,7 +190,7 @@ print("  5. Knowledge Assistant auto-syncs from the volume")
 
 # MAGIC %sql
 # MAGIC -- Create a processing log table (if not exists)
-# MAGIC CREATE TABLE IF NOT EXISTS lr_serverless_aws_us_catalog.insurance_mrc_assistant.processing_log (
+# MAGIC CREATE TABLE IF NOT EXISTS lr_serverless_aws_us_catalog.insurance_poc.processing_log (
 # MAGIC   file_name STRING,
 # MAGIC   processed_at TIMESTAMP,
 # MAGIC   node_count INT,
@@ -203,7 +203,7 @@ print("  5. Knowledge Assistant auto-syncs from the volume")
 
 # MAGIC %sql
 # MAGIC -- Simulate logging a processed file
-# MAGIC INSERT INTO lr_serverless_aws_us_catalog.insurance_mrc_assistant.processing_log VALUES
+# MAGIC INSERT INTO lr_serverless_aws_us_catalog.insurance_poc.processing_log VALUES
 # MAGIC ('mrc_policy_001.pdf', current_timestamp(), 20, 19, 'SUCCESS'),
 # MAGIC ('mrc_policy_002.pdf', current_timestamp(), 18, 17, 'SUCCESS'),
 # MAGIC ('mrc_policy_003.pdf', current_timestamp(), 21, 20, 'SUCCESS'),
@@ -212,14 +212,12 @@ print("  5. Knowledge Assistant auto-syncs from the volume")
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC -- Find new files that haven't been processed yet
-# MAGIC -- This query drives incremental extraction
-# MAGIC SELECT f.name AS new_file
-# MAGIC FROM list_volume_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/') f
-# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.processing_log p
-# MAGIC   ON f.name = p.file_name
-# MAGIC WHERE p.file_name IS NULL
+# Find new files not yet processed (compare volume listing to processing log)
+from databricks.sdk import WorkspaceClient
+w2 = WorkspaceClient()
+volume_files = {f.name for f in w2.files.list_directory_contents("/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/")}
+print(f"Files in volume: {sorted(volume_files)}")
+# In production, compare against the processing_log table to find unprocessed files
 
 # COMMAND ----------
 

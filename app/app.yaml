@@ -9,7 +9,7 @@ command:
 
 env:
   - name: SERVING_ENDPOINT
-    value: "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup"
+    value: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
   - name: KA_ENDPOINT
     value: "ka-04bfe483-endpoint"
   - name: GENIE_SPACE_ID
@@ -18,7 +18,7 @@ env:
 resources:
   - name: serving-endpoint
     serving_endpoint:
-      name: "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup"
+      name: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
       permission: CAN_QUERY
   - name: ka-endpoint
     serving_endpoint:
@@ -26,5 +26,5 @@ resources:
       permission: CAN_QUERY
   - name: sql-warehouse
     sql_warehouse:
-      name: "warehouse"
+      id: "ab79eced8207d29b"
       permission: CAN_USE

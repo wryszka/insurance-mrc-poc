@@ -17,7 +17,7 @@ from databricks.sdk.service.knowledgeassistants import (
 
 PROFILE = "fevm-lr-serverless-aws-us"
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_mrc_assistant"
+SCHEMA = "insurance_poc"
 VOLUME_PATH = f"/Volumes/{CATALOG}/{SCHEMA}/raw_policies"
 
 KA_DISPLAY_NAME = "Insurance MRC Policy Assistant"

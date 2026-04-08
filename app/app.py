@@ -7,7 +7,7 @@ from databricks.sdk import WorkspaceClient
 
 SERVING_ENDPOINT = os.environ.get(
     "SERVING_ENDPOINT",
-    "agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
+    "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup",
 )
 KA_ENDPOINT = os.environ.get("KA_ENDPOINT", "ka-04bfe483-endpoint")
 GENIE_SPACE_ID = os.environ.get("GENIE_SPACE_ID", "01f133331bcd1672834e9736f93f6244")

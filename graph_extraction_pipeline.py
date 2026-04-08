@@ -13,7 +13,7 @@ from databricks.sdk.service.sql import StatementState
 
 PROFILE = "fevm-lr-serverless-aws-us"
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_mrc_assistant"
+SCHEMA = "insurance_poc"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 VOLUME_PATH = f"/Volumes/{CATALOG}/{SCHEMA}/raw_policies"
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"

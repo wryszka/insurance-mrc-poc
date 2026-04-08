@@ -69,26 +69,26 @@ Everything is created inside `<your_catalog>.insurance_mrc_assistant`:
 | Volume | `raw_policies` | Managed volume (5 MRC PDFs) |
 | Table | `graph_nodes` | Delta table (entities) |
 | Table | `graph_edges` | Delta table (relationships) |
-| Model | `sql_sub_agent` | UC registered model |
 | Model | `insurance_supervisor_agent` | UC registered model |
-| Endpoint | `agents_<catalog>-<schema>-insurance_sup` | Model serving |
+| Endpoint | `agents_<catalog>-<schema>-insurance_sup` | Model serving (supervisor) |
 | Endpoint | `ka-<id>-endpoint` | Knowledge Assistant |
-| App | `insurance-mrc-assistant` | Databricks App |
+| Genie Room | `Insurance MRC Graph Explorer` | AI/BI Genie (NL-to-SQL) |
+| App | `insurance-mrc-assistant` | Databricks App (Streamlit) |
 
 ### What gets created in your workspace
 
 ```
 /Users/<you>/insurance_mrc_poc/
 ├── demo/
-│   ├── 00_demo_index        ← START HERE for demos
-│   ├── 01_walkthrough       ← End-to-end pipeline
-│   ├── 02_change_management ← ACORD updates + new files
-│   └── 03_security_audit    ← Governance & compliance
-├── app/                     ← Streamlit app source
-├── sql_agent_model.py       ← SQL sub-agent
-├── supervisor_model.py      ← Multi-agent supervisor
-├── deploy_agents            ← Agent registration notebook
-└── acord_dictionary.json    ← ACORD ontology
+│   ├── 00_demo_index            ← START HERE for demos
+│   ├── 01_walkthrough           ← End-to-end pipeline
+│   ├── 02_change_management     ← ACORD updates + new files
+│   ├── 03_security_audit        ← Governance & compliance
+│   └── 04_performance_architecture ← Latency analysis & graph DB comparison
+├── app/                         ← Streamlit app source
+├── supervisor_model.py          ← Supervisor agent (KA + Claude synthesis)
+├── deploy_agents                ← Agent registration notebook
+└── acord_dictionary.json        ← ACORD ontology
 ```
 
 ## Architecture
@@ -100,37 +100,36 @@ MRC PDFs (UC Volume)
     │                                                          (Delta Tables)
     │                                                               │
     │                                                               ▼
-    │                                                    SQL Sub-Agent (Claude)
-    │                                                    "NL → SQL over graph"
+    │                                                     Genie Room (AI/BI)
+    │                                                     "NL → SQL over graph"
     │                                                               │
     └──▶ Knowledge Assistant (Vector Search)                        │
          "Semantic search over raw PDFs"                            │
                     │                                               │
-                    └────── Tool A ──▶ SUPERVISOR ◀── Tool B ───────┘
-                                      (Claude Sonnet 4.6)
-                                            │
-                                            ▼
-                                      Databricks App
-                                      (Streamlit UI)
+                    └───▶ SUPERVISOR (Claude) ◀──────── App ────────┘
+                          (KA + synthesis)     (routes to Genie directly)
+                                │
+                                ▼
+                          Databricks App
+                          (Streamlit UI)
 ```
 
-## Demo Scenarios
+## Demo Flow
 
-### 1. End-to-End Walkthrough (15 min)
-Shows every stage: PDF → parse → graph → vector → agent → app
+### 1. App Interface
+Show the chat app with three modes: Supervisor, Knowledge Assistant, Genie
 
-### 2. Change Management (10 min)
-- **A**: Update ACORD dictionary (add entity types) — zero code changes
-- **B**: Add new policy files — no retraining, no redeployment
+### 2. Behind the Scenes — Governance & Traceability
+Inference logs, audit trail, lineage, access control, model registry (notebook 03)
 
-### 3. Security & Audit (10 min)
-For regulated Lloyd's syndicates under PRA/FCA:
-- Inference logging (every request/response)
-- Data lineage (Unity Catalog)
-- Access control (row/column level security)
-- Model governance (UC Model Registry)
-- Audit trail (system tables)
-- Delta time travel
+### 3. ACORD to Delta — The Extraction Pipeline
+PDF parsing, LLM extraction, knowledge graph construction (notebook 01)
+
+### 4. Agents at Work
+Supervisor + KA synthesis, Genie NL-to-SQL, live queries (notebooks 01 + app)
+
+### 5. Change Management
+Update ACORD specs (add entity types), add new files (notebook 02)
 
 ## Customising for a different catalog
 

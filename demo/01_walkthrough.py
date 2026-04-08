@@ -26,8 +26,8 @@
 # MAGIC                           │                             │
 # MAGIC                           ▼                             ▼
 # MAGIC                  ┌──────────────────────────────────────────────┐
-# MAGIC                  │         SQL Sub-Agent (Tool B)               │
-# MAGIC                  │  "Find limits, relationships, aggregations"  │
+# MAGIC                  │         Genie Room (AI/BI)                   │
+# MAGIC                  │  "NL to SQL over graph tables"               │
 # MAGIC                  └──────────────────┬───────────────────────────┘
 # MAGIC                                     │
 # MAGIC   ┌──────────────────┐              │
@@ -53,7 +53,7 @@
 
 # MAGIC %sql
 # MAGIC -- What's in our document store?
-# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/'
+# MAGIC LIST '/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/'
 
 # COMMAND ----------
 
@@ -95,7 +95,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC -- Parse the first MRC and see what we get
 # MAGIC SELECT
 # MAGIC   cast(ai_parse_document(content) AS STRING) AS parsed_json
-# MAGIC FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_001.pdf')
+# MAGIC FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_001.pdf')
 
 # COMMAND ----------
 
@@ -103,7 +103,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC -- Extract just the text elements for readability
 # MAGIC WITH parsed AS (
 # MAGIC   SELECT cast(ai_parse_document(content) AS STRING) AS doc_json
-# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_mrc_assistant/raw_policies/mrc_policy_001.pdf')
+# MAGIC   FROM read_files('/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/mrc_policy_001.pdf')
 # MAGIC )
 # MAGIC SELECT
 # MAGIC   element.type,
@@ -144,7 +144,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC %sql
 # MAGIC -- Node summary
 # MAGIC SELECT label, COUNT(*) as count
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
 # MAGIC GROUP BY label
 # MAGIC ORDER BY count DESC
 
@@ -158,7 +158,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   properties:class_of_business AS class_of_business,
 # MAGIC   properties:inception_date AS inception,
 # MAGIC   properties:expiry_date AS expiry
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
 # MAGIC WHERE label = 'Policy'
 
 # COMMAND ----------
@@ -166,7 +166,7 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC %sql
 # MAGIC -- Relationship summary
 # MAGIC SELECT relationship_type, COUNT(*) as count
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges
 # MAGIC GROUP BY relationship_type
 # MAGIC ORDER BY count DESC
 
@@ -178,9 +178,9 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   p.properties:policy_number AS policy,
 # MAGIC   b.properties:name AS broker,
 # MAGIC   b.properties:lloyds_broker_code AS broker_code
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p ON e.source_id = p.node_id
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes b ON e.target_id = b.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p ON e.source_id = p.node_id
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes b ON e.target_id = b.node_id
 # MAGIC WHERE e.relationship_type = 'PLACED_BY'
 
 # COMMAND ----------
@@ -193,9 +193,9 @@ print(json.dumps(acord["relationships"]["EXCLUDES"], indent=2))
 # MAGIC   l.properties:type AS limit_type,
 # MAGIC   l.properties:amount AS amount,
 # MAGIC   l.properties:basis AS basis
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p ON e.source_id = p.node_id
-# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes l ON e.target_id = l.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p ON e.source_id = p.node_id
+# MAGIC JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes l ON e.target_id = l.node_id
 # MAGIC WHERE e.relationship_type = 'HAS_LIMIT'
 # MAGIC ORDER BY p.properties:policy_number
 
@@ -212,41 +212,52 @@ from databricks.sdk import WorkspaceClient
 w = WorkspaceClient()
 
 # Query the Knowledge Assistant directly
-resp = w.serving_endpoints.query(
-    name="ka-04bfe483-endpoint",
-    input={"messages": [{"role": "user", "content": "What exclusions apply to the cyber liability policy?"}]},
+resp = w.api_client.do(
+    "POST", "/serving-endpoints/ka-04bfe483-endpoint/invocations",
+    body={"input": [{"role": "user", "content": "What exclusions apply to the cyber liability policy?"}]},
 )
-print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
+for item in resp.get("output", []):
+    if item.get("type") == "message":
+        for block in item.get("content", []):
+            if block.get("type") == "output_text":
+                print(block["text"], end="")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 7. The Multi-Agent Supervisor — Bringing It All Together
+# MAGIC ## 7. Genie Room — Natural Language Over the Graph
 # MAGIC
-# MAGIC The **Supervisor Agent** (powered by Claude) receives a question and routes it:
-# MAGIC - **Text/semantic questions** → Knowledge Assistant (vector search over PDFs)
-# MAGIC - **Structured/relationship questions** → SQL Agent (queries the graph tables)
-# MAGIC - **Complex questions** → Both tools, then synthesises
-# MAGIC
-# MAGIC The user doesn't need to know which tool to use — the supervisor decides.
+# MAGIC For structured data questions (limits, relationships, aggregations), we use a **Genie Room** backed by the graph tables. Genie generates SQL from natural language — no custom SQL agent needed.
 
 # COMMAND ----------
 
-# Query the supervisor
-resp = w.serving_endpoints.query(
-    name="agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
-    input={"messages": [{"role": "user", "content": "Which policy has the highest aggregate limit, and what exclusions apply to it?"}]},
+# Query the Genie room directly
+msg = w.genie.start_conversation_and_wait(
+    space_id="01f133331bcd1672834e9736f93f6244",
+    content="Which broker placed the marine cargo policy and what are its limits?",
 )
-print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
+for att in (msg.attachments or []):
+    if att.query and att.query.query:
+        print("SQL:", att.query.query[:300])
+    if att.text and att.text.content:
+        print("\n" + att.text.content)
 
 # COMMAND ----------
 
-# Another query — pure graph traversal
-resp = w.serving_endpoints.query(
-    name="agents_lr_serverless_aws_us_catalog-insurance_mrc_assistant-insurance_sup",
-    input={"messages": [{"role": "user", "content": "List all syndicates that underwrite more than one policy"}]},
+# MAGIC %md
+# MAGIC ## 8. The Supervisor Agent — Bringing It All Together
+# MAGIC
+# MAGIC The **Supervisor Agent** (powered by Claude) queries the Knowledge Assistant for document context, then synthesises a clear answer. For structured data, users can query the Genie room directly via the app.
+
+# COMMAND ----------
+
+# Query the supervisor (routes to KA + Claude synthesis)
+resp = w.api_client.do(
+    "POST", "/serving-endpoints/agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup/invocations",
+    body={"messages": [{"role": "user", "content": "What exclusions apply to the D&O policy and why are they important?"}]},
 )
-print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
+if "choices" in resp:
+    print(resp["choices"][0]["message"]["content"])
 
 # COMMAND ----------
 
@@ -268,8 +279,8 @@ print(resp.choices[0].message.content if hasattr(resp, 'choices') else resp)
 # MAGIC | Extraction | `ai_query()` + Llama 3.3 70B | Converts text to graph (nodes + edges) |
 # MAGIC | Graph | Delta Tables | Stores knowledge graph in SQL-queryable format |
 # MAGIC | Vector Search | Knowledge Assistant | Semantic search over raw documents |
-# MAGIC | SQL Agent | Mosaic AI Agent Framework | Natural language to SQL over graph |
-# MAGIC | Supervisor | Claude Sonnet 4.6 | Routes queries to right tool, synthesises |
+# MAGIC | Genie Room | AI/BI Genie | Natural language to SQL over graph tables |
+# MAGIC | Supervisor | Claude Sonnet 4.6 | KA queries + synthesis |
 # MAGIC | App | Databricks Apps | Self-service chat UI |
 # MAGIC
 # MAGIC **No external services. No graph databases. Everything runs on Databricks.**

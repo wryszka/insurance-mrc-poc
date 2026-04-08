@@ -97,7 +97,7 @@
 # MAGIC   event_time,
 # MAGIC   event_type
 # MAGIC FROM system.access.table_lineage
-# MAGIC WHERE target_table_full_name LIKE '%insurance_mrc_assistant.graph%'
+# MAGIC WHERE target_table_full_name LIKE '%insurance_poc.graph%'
 # MAGIC   AND event_time > current_timestamp() - INTERVAL 7 DAYS
 # MAGIC ORDER BY event_time DESC
 # MAGIC LIMIT 20
@@ -112,7 +112,7 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- Audit trail: all actions on insurance_mrc_assistant schema objects
+# MAGIC -- Audit trail: all actions on insurance_poc schema objects
 # MAGIC SELECT
 # MAGIC   event_time,
 # MAGIC   user_identity.email AS user,
@@ -120,7 +120,7 @@
 # MAGIC   request_params.full_name_arg AS resource,
 # MAGIC   response.status_code
 # MAGIC FROM system.access.audit
-# MAGIC WHERE request_params.full_name_arg LIKE '%insurance_mrc_assistant%'
+# MAGIC WHERE request_params.full_name_arg LIKE '%insurance_poc%'
 # MAGIC   AND event_time > current_timestamp() - INTERVAL 7 DAYS
 # MAGIC ORDER BY event_time DESC
 # MAGIC LIMIT 30
@@ -156,14 +156,14 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- Current grants on the insurance_mrc_assistant schema
-# MAGIC SHOW GRANTS ON SCHEMA lr_serverless_aws_us_catalog.insurance_mrc_assistant
+# MAGIC -- Current grants on the insurance_poc schema
+# MAGIC SHOW GRANTS ON SCHEMA lr_serverless_aws_us_catalog.insurance_poc
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- Current grants on graph tables
-# MAGIC SHOW GRANTS ON TABLE lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
+# MAGIC SHOW GRANTS ON TABLE lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
 
 # COMMAND ----------
 
@@ -177,15 +177,15 @@
 # MAGIC %sql
 # MAGIC -- Create a row filter function (example — not applied in demo)
 # MAGIC -- In production, this restricts what each user can see
-# MAGIC CREATE OR REPLACE FUNCTION lr_serverless_aws_us_catalog.insurance_mrc_assistant.broker_row_filter(source_id STRING, relationship_type STRING)
+# MAGIC CREATE OR REPLACE FUNCTION lr_serverless_aws_us_catalog.insurance_poc.broker_row_filter(source_id STRING, relationship_type STRING)
 # MAGIC RETURNS BOOLEAN
 # MAGIC RETURN
 # MAGIC   CASE
 # MAGIC     -- If the user is a broker, only show edges related to their policies
 # MAGIC     WHEN is_member('brokers_group') THEN
 # MAGIC       EXISTS (
-# MAGIC         SELECT 1 FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
-# MAGIC         JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes b ON e.target_id = b.node_id
+# MAGIC         SELECT 1 FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
+# MAGIC         JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes b ON e.target_id = b.node_id
 # MAGIC         WHERE e.relationship_type = 'PLACED_BY'
 # MAGIC           AND e.source_id = source_id
 # MAGIC           AND b.properties:name = current_user()
@@ -204,7 +204,7 @@
 
 # MAGIC %sql
 # MAGIC -- Column mask function (example)
-# MAGIC CREATE OR REPLACE FUNCTION lr_serverless_aws_us_catalog.insurance_mrc_assistant.mask_premium(properties STRING)
+# MAGIC CREATE OR REPLACE FUNCTION lr_serverless_aws_us_catalog.insurance_poc.mask_premium(properties STRING)
 # MAGIC RETURNS STRING
 # MAGIC RETURN
 # MAGIC   CASE
@@ -222,14 +222,14 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC -- All registered models in the insurance_mrc_assistant schema
+# MAGIC -- All registered models in the insurance_poc schema
 # MAGIC SELECT
 # MAGIC   catalog_name,
 # MAGIC   schema_name,
 # MAGIC   name AS model_name,
 # MAGIC   comment
 # MAGIC FROM system.information_schema.registered_models
-# MAGIC WHERE schema_name = 'insurance_mrc_assistant'
+# MAGIC WHERE schema_name = 'insurance_poc'
 
 # COMMAND ----------
 
@@ -243,7 +243,7 @@
 # MAGIC   created_at,
 # MAGIC   last_updated_at
 # MAGIC FROM system.information_schema.model_versions
-# MAGIC WHERE schema_name = 'insurance_mrc_assistant'
+# MAGIC WHERE schema_name = 'insurance_poc'
 # MAGIC ORDER BY model_name, version DESC
 
 # COMMAND ----------
@@ -258,26 +258,26 @@
 # MAGIC %sql
 # MAGIC -- Integrity check: orphaned edges (edges pointing to non-existent nodes)
 # MAGIC SELECT 'Orphaned source' AS issue, COUNT(*) AS count
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
-# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes n ON e.source_id = n.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
+# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes n ON e.source_id = n.node_id
 # MAGIC WHERE n.node_id IS NULL
 # MAGIC UNION ALL
 # MAGIC SELECT 'Orphaned target', COUNT(*)
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
-# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes n ON e.target_id = n.node_id
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
+# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_nodes n ON e.target_id = n.node_id
 # MAGIC WHERE n.node_id IS NULL
 # MAGIC UNION ALL
 # MAGIC -- Policies without a broker (every policy must be placed)
 # MAGIC SELECT 'Policy without broker', COUNT(*)
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p
-# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p
+# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
 # MAGIC   ON p.node_id = e.source_id AND e.relationship_type = 'PLACED_BY'
 # MAGIC WHERE p.label = 'Policy' AND e.source_id IS NULL
 # MAGIC UNION ALL
 # MAGIC -- Policies without any limits
 # MAGIC SELECT 'Policy without limits', COUNT(*)
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes p
-# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges e
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes p
+# MAGIC LEFT JOIN lr_serverless_aws_us_catalog.insurance_poc.graph_edges e
 # MAGIC   ON p.node_id = e.source_id AND e.relationship_type = 'HAS_LIMIT'
 # MAGIC WHERE p.label = 'Policy' AND e.source_id IS NULL
 
@@ -285,14 +285,14 @@
 
 # MAGIC %sql
 # MAGIC -- Delta table history — full change log, who wrote what when
-# MAGIC DESCRIBE HISTORY lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes
+# MAGIC DESCRIBE HISTORY lr_serverless_aws_us_catalog.insurance_poc.graph_nodes
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC -- Time travel: see the graph at any point in time
 # MAGIC SELECT COUNT(*) AS nodes_at_version_0
-# MAGIC FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes VERSION AS OF 0
+# MAGIC FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes VERSION AS OF 0
 
 # COMMAND ----------
 
@@ -307,11 +307,11 @@
 # MAGIC -- Daily pipeline health summary
 # MAGIC SELECT
 # MAGIC   current_date() AS report_date,
-# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes) AS total_nodes,
-# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges) AS total_edges,
-# MAGIC   (SELECT COUNT(DISTINCT label) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes) AS entity_types,
-# MAGIC   (SELECT COUNT(DISTINCT relationship_type) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_edges) AS relationship_types,
-# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_mrc_assistant.graph_nodes WHERE label = 'Policy') AS policies_indexed
+# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes) AS total_nodes,
+# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges) AS total_edges,
+# MAGIC   (SELECT COUNT(DISTINCT label) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes) AS entity_types,
+# MAGIC   (SELECT COUNT(DISTINCT relationship_type) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_edges) AS relationship_types,
+# MAGIC   (SELECT COUNT(*) FROM lr_serverless_aws_us_catalog.insurance_poc.graph_nodes WHERE label = 'Policy') AS policies_indexed
 
 # COMMAND ----------
 

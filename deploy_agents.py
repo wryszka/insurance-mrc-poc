@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Insurance MRC POC - Agent Deployment
-# MAGIC Code-based model logging with MLflow 3.x for SQL Sub-Agent and Supervisor.
+# MAGIC Code-based model logging with MLflow 3.x for the Supervisor Agent.
 
 # COMMAND ----------
 
@@ -20,38 +20,20 @@ from databricks.sdk import WorkspaceClient
 mlflow.set_registry_uri("databricks-uc")
 
 CATALOG = "lr_serverless_aws_us_catalog"
-SCHEMA = "insurance_mrc_assistant"
+SCHEMA = "insurance_poc"
 FULL_SCHEMA = CATALOG + "." + SCHEMA
-WS_DIR = "/Workspace/Users/laurence.ryszka@databricks.com/insurance_mrc_poc"
 
 w = WorkspaceClient()
-print("Connected as:", w.current_user.me().user_name)
+me = w.current_user.me().user_name
+WS_DIR = "/Workspace/Users/" + me + "/insurance_mrc_poc"
+
+print("Connected as:", me)
 print("MLflow:", mlflow.__version__)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Register SQL Sub-Agent
-
-# COMMAND ----------
-
-sql_model_name = FULL_SCHEMA + ".sql_sub_agent"
-
-with mlflow.start_run(run_name="sql_sub_agent"):
-    info = mlflow.pyfunc.log_model(
-        artifact_path="sql_sub_agent",
-        python_model=WS_DIR + "/sql_agent_model.py",
-        registered_model_name=sql_model_name,
-        pip_requirements=["databricks-sdk", "mlflow"],
-    )
-    print("SQL Agent logged:", info.model_uri)
-
-print("SQL Agent registered:", sql_model_name)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 2. Register Multi-Agent Supervisor
+# MAGIC ## 1. Register Supervisor Agent
 
 # COMMAND ----------
 
@@ -71,11 +53,10 @@ print("Supervisor registered:", supervisor_model_name)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Deploy Supervisor Agent
+# MAGIC ## 2. Deploy Supervisor Agent
 
 # COMMAND ----------
 
-# Get latest model version
 from mlflow import MlflowClient
 client = MlflowClient()
 versions = client.search_model_versions("name = '" + supervisor_model_name + "'")
