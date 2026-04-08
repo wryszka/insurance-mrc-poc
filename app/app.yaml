@@ -1,0 +1,28 @@
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port
+  - "8000"
+  - --server.address
+  - "0.0.0.0"
+
+env:
+  - name: SERVING_ENDPOINT
+    value: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
+  - name: KA_ENDPOINT
+    value: "ka-04bfe483-endpoint"
+
+resources:
+  - name: serving-endpoint
+    serving_endpoint:
+      name: "agents_lr_serverless_aws_us_catalog-insurance_poc-insurance_sup"
+      permission: CAN_QUERY
+  - name: ka-endpoint
+    serving_endpoint:
+      name: "ka-04bfe483-endpoint"
+      permission: CAN_QUERY
+  - name: sql-warehouse
+    sql_warehouse:
+      name: "warehouse"
+      permission: CAN_USE
