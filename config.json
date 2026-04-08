@@ -1,0 +1,13 @@
+{
+  "_comment": "Edit ONLY this file before deploying. All scripts read from here.",
+
+  "catalog": "YOUR_CATALOG",
+  "schema": "insurance_poc",
+
+  "databricks_profile": "DEFAULT",
+
+  "llm_extraction": "databricks-meta-llama-3-3-70b-instruct",
+  "llm_agent": "databricks-claude-sonnet-4-6",
+
+  "app_name": "insurance-mrc-assistant"
+}
