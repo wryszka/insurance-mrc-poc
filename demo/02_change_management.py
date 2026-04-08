@@ -224,21 +224,20 @@ print(f"Files in volume: {sorted(volume_files)}")
 # MAGIC %md
 # MAGIC ### B4. Knowledge Assistant auto-sync
 # MAGIC
-# MAGIC The Knowledge Assistant monitors the UC Volume. When new files appear, it automatically re-indexes.
-
-# COMMAND ----------
-
-from databricks.sdk import WorkspaceClient
-w = WorkspaceClient()
-
-# Trigger a sync of the knowledge sources
-ka_name = "knowledge-assistants/04bfe483-92eb-42c9-970c-d796f99028a1"
-w.knowledge_assistants.sync_knowledge_sources(name=ka_name)
-print("Knowledge Assistant sync triggered — new documents will be searchable within minutes")
-
-# Check current state
-ka = w.knowledge_assistants.get_knowledge_assistant(ka_name)
-print(f"State: {ka.state}")
+# MAGIC The Knowledge Assistant is backed by the UC Volume `/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies/`.
+# MAGIC
+# MAGIC When new files are uploaded to this volume, the Knowledge Assistant **automatically detects and indexes them** — no manual intervention required. The indexing process:
+# MAGIC
+# MAGIC 1. The Knowledge Assistant periodically scans the configured volume for new or changed files
+# MAGIC 2. New PDFs are parsed, chunked, and embedded into the vector search index
+# MAGIC 3. Within minutes, the new content is searchable via the KA endpoint
+# MAGIC
+# MAGIC A manual sync can also be triggered from the **Knowledge Assistants** section in the Databricks workspace sidebar, or via the SDK:
+# MAGIC ```python
+# MAGIC w.knowledge_assistants.sync_knowledge_sources(name="knowledge-assistants/<id>")
+# MAGIC ```
+# MAGIC
+# MAGIC **No retraining. No redeployment. Drop a file, it's searchable.**
 
 # COMMAND ----------
 

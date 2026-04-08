@@ -228,19 +228,16 @@ for item in resp.get("output", []):
 # MAGIC ## 7. Genie Room — Natural Language Over the Graph
 # MAGIC
 # MAGIC For structured data questions (limits, relationships, aggregations), we use a **Genie Room** backed by the graph tables. Genie generates SQL from natural language — no custom SQL agent needed.
-
-# COMMAND ----------
-
-# Query the Genie room directly
-msg = w.genie.start_conversation_and_wait(
-    space_id="01f133331bcd1672834e9736f93f6244",
-    content="Which broker placed the marine cargo policy and what are its limits?",
-)
-for att in (msg.attachments or []):
-    if att.query and att.query.query:
-        print("SQL:", att.query.query[:300])
-    if att.text and att.text.content:
-        print("\n" + att.text.content)
+# MAGIC
+# MAGIC The Genie room for this demo is called **"Insurance MRC Graph Explorer"** and can be found in the **Genie** section of the Databricks workspace sidebar (under AI/BI).
+# MAGIC
+# MAGIC It is backed by two tables:
+# MAGIC - `lr_serverless_aws_us_catalog.insurance_poc.graph_nodes`
+# MAGIC - `lr_serverless_aws_us_catalog.insurance_poc.graph_edges`
+# MAGIC
+# MAGIC Try asking it: *"Which broker placed the marine cargo policy and what are its limits?"*
+# MAGIC
+# MAGIC Genie will generate the correct SQL (with `ILIKE` for case-insensitive matching, `:` for JSON extraction), execute it on the serverless warehouse, and return the answer.
 
 # COMMAND ----------
 
