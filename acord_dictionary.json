@@ -1,0 +1,84 @@
+{
+  "version": "1.0",
+  "description": "ACORD-aligned entity and relationship dictionary for Lloyd's Market Reform Contract (MRC v3) extraction",
+  "entities": {
+    "Insured": {
+      "description": "The party seeking insurance coverage",
+      "attributes": ["name", "address", "industry", "jurisdiction"]
+    },
+    "Broker": {
+      "description": "The intermediary arranging the insurance placement",
+      "attributes": ["name", "lloyds_broker_code", "contact_email"]
+    },
+    "Insurer": {
+      "description": "The underwriter or syndicate providing coverage",
+      "attributes": ["name", "syndicate_number", "lloyds_stamp"]
+    },
+    "Limit": {
+      "description": "The maximum amount payable under the policy",
+      "attributes": ["amount", "currency", "basis", "aggregate_or_occurrence"]
+    },
+    "Deductible": {
+      "description": "The amount the insured must bear before coverage applies",
+      "attributes": ["amount", "currency", "basis"]
+    },
+    "Clause": {
+      "description": "A contractual clause included in the policy wording",
+      "attributes": ["clause_id", "title", "text", "clause_type"]
+    },
+    "Exclusion": {
+      "description": "A specific peril or circumstance excluded from coverage",
+      "attributes": ["exclusion_id", "title", "description"]
+    },
+    "Policy": {
+      "description": "The insurance contract itself",
+      "attributes": ["policy_number", "umr", "inception_date", "expiry_date", "class_of_business"]
+    },
+    "Premium": {
+      "description": "The price charged for insurance coverage",
+      "attributes": ["amount", "currency", "payment_terms", "installment_schedule"]
+    }
+  },
+  "relationships": {
+    "PLACED_BY": {
+      "source": "Policy",
+      "target": "Broker",
+      "description": "The broker who placed the risk in the market"
+    },
+    "ISSUED_TO": {
+      "source": "Policy",
+      "target": "Insured",
+      "description": "The insured party on the policy"
+    },
+    "UNDERWRITTEN_BY": {
+      "source": "Policy",
+      "target": "Insurer",
+      "description": "The insurer/syndicate underwriting the risk"
+    },
+    "HAS_LIMIT": {
+      "source": "Policy",
+      "target": "Limit",
+      "description": "Coverage limit attached to the policy"
+    },
+    "HAS_DEDUCTIBLE": {
+      "source": "Policy",
+      "target": "Deductible",
+      "description": "Deductible applicable to the policy"
+    },
+    "CONTAINS_CLAUSE": {
+      "source": "Policy",
+      "target": "Clause",
+      "description": "A clause forming part of the policy wording"
+    },
+    "EXCLUDES": {
+      "source": "Policy",
+      "target": "Exclusion",
+      "description": "A peril or circumstance excluded from coverage"
+    },
+    "HAS_PREMIUM": {
+      "source": "Policy",
+      "target": "Premium",
+      "description": "The premium charged for the policy"
+    }
+  }
+}

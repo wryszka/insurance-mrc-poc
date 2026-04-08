@@ -1,0 +1,6 @@
+{
+  "knowledge_assistant_name": "knowledge-assistants/04bfe483-92eb-42c9-970c-d796f99028a1",
+  "knowledge_assistant_id": "04bfe483-92eb-42c9-970c-d796f99028a1",
+  "endpoint_name": "ka-04bfe483-endpoint",
+  "volume_path": "/Volumes/lr_serverless_aws_us_catalog/insurance_poc/raw_policies"
+}
