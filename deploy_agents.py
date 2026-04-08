@@ -16,8 +16,15 @@ import mlflow
 import databricks.agents as agents
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.sql import StatementState
+from mlflow.models.signature import ModelSignature
+from mlflow.types.schema import ColSpec, Schema
 
 mlflow.set_registry_uri("databricks-uc")
+
+# Define model signature for chat-style agents
+_input_schema = Schema([ColSpec("string", "messages")])
+_output_schema = Schema([ColSpec("string", "content")])
+AGENT_SIGNATURE = ModelSignature(inputs=_input_schema, outputs=_output_schema)
 
 CATALOG = "lr_serverless_aws_us_catalog"
 SCHEMA = "insurance_poc"
@@ -140,6 +147,7 @@ with mlflow.start_run(run_name="sql_sub_agent"):
         artifact_path="sql_sub_agent",
         python_model=SQLSubAgent(),
         registered_model_name=sql_model_name,
+        signature=AGENT_SIGNATURE,
         pip_requirements=["databricks-sdk", "mlflow"],
     )
     print("SQL Agent logged:", info.model_uri)
@@ -278,6 +286,7 @@ with mlflow.start_run(run_name="supervisor_agent"):
         artifact_path="supervisor_agent",
         python_model=SupervisorAgent(),
         registered_model_name=supervisor_model_name,
+        signature=AGENT_SIGNATURE,
         pip_requirements=["databricks-sdk", "mlflow", "databricks-agents"],
     )
     print("Supervisor logged:", info.model_uri)
